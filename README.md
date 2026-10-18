@@ -1,42 +1,149 @@
 # Market Regime Detector: Indian Equity Market (NIFTY 50)
 
-An educational machine-learning application that uses unsupervised clustering to explore historical market regimes in the NIFTY 50 index.
+An interactive machine learning application that uses unsupervised learning to explore historical market regimes in India's NIFTY 50 index.
 
-## Quick Start (Windows PowerShell)
+The project combines time-series feature engineering, KMeans clustering, chronological evaluation, and interactive visualizations to investigate how market behavior changes over time.
+
+![Market Regime Detector dashboard](assets/Screenshot.jpg)
+
+## Overview
+
+Financial markets exhibit different behavioral patterns, including relatively calm periods, sustained upward or downward movements, and episodes of elevated volatility.
+
+This project explores whether historical market observations can be grouped into distinct regimes using unsupervised machine learning. It analyzes price-derived features, learns clusters from a training period, and examines how those clusters behave on unseen historical data.
+
+The application is designed for educational and analytical purposes. It does not predict future prices, generate trading signals, or recommend investments.
+
+## Features
+
+- **Historical data:** Retrieve NIFTY 50 index data using Yahoo Finance.
+- **Time-series feature engineering:** Calculate returns, rolling volatility, momentum, and moving-average distance.
+- **Unsupervised learning:** Apply KMeans clustering to identify groups of similar market observations.
+- **Leakage-aware evaluation:** Use chronological train/test splitting and fit preprocessing on training data only.
+- **Cluster analysis:** Examine cluster characteristics, observation counts, and regime distributions.
+- **Interactive dashboard:** Explore market behavior and model results through Streamlit.
+- **Automated testing:** Validate data handling, feature calculations, clustering, and evaluation using pytest.
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Python | Core implementation |
+| pandas and NumPy | Data processing and numerical calculations |
+| yfinance | Historical market data |
+| scikit-learn | Feature scaling, KMeans, and evaluation |
+| matplotlib | Data visualization |
+| Streamlit | Interactive dashboard |
+| pytest | Automated testing |
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10 or newer
+- Git
+- Internet access for retrieving historical market data
+
+### Installation
+
+Clone the repository and navigate to the project directory:
 
 ```powershell
 git clone https://github.com/p1xl07/market-regime-detector.git
 cd market-regime-detector
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-.venv\Scripts\python.exe -m pytest tests/ -v
-.venv\Scripts\streamlit.exe run app.py
 ```
 
-An educational and research-oriented machine learning project built for Indian equity market analysis using historical NIFTY 50 index data.
+Create and activate a virtual environment:
 
-## Problem Statement & Motivation
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-Financial markets undergo distinct behavioral phases—such as calm trending bull markets, high-volatility corrections, and range-bound consolidations. Traditional forecasting models often fail because they assume stationary market dynamics. 
+Install the dependencies:
 
-This project explores **unsupervised machine learning (KMeans clustering)** to group historical market states based on price action, volatility, and momentum without requiring future labels or predictive claims. It serves as a pedagogical template for students and practitioners learning rigorous ML pipelines and time-series feature engineering.
+```powershell
+python -m pip install -r requirements.txt
+```
 
----
+### Run the application
 
-## Features & Technology Stack
+```powershell
+python -m streamlit run app.py
+```
 
-- **Python** (3.10+)
-- **pandas & NumPy** for data manipulation and vectorized calculations
-- **yfinance** for historical NIFTY 50 (`^NSEI`) data retrieval
-- **scikit-learn** for `StandardScaler` and `KMeans` clustering
-- **matplotlib** for static visualizations
-- **Streamlit** for the interactive dashboard
-- **pytest** for automated testing
+Open the local URL displayed in the terminal, typically `http://localhost:8501`.
 
----
+The application retrieves historical data through Yahoo Finance. Availability depends on the external data provider and network connectivity.
 
-## Repository Structure
+### Run the tests
+
+```powershell
+python -m pytest tests/ -v
+```
+
+The automated tests are designed to validate core functionality without requiring live market data.
+
+## Machine Learning Methodology
+
+### 1. Data collection
+
+The application retrieves historical NIFTY 50 index data using the Yahoo Finance ticker `^NSEI`.
+
+The data is validated before processing to identify issues such as missing observations, duplicate dates, invalid prices, and insufficient history.
+
+### 2. Feature engineering
+
+The model uses five price-derived features.
+
+| Feature | Definition | Lookback |
+|---|---|---|
+| Daily return | Percentage change from the previous closing price | 1 trading day |
+| Cumulative return | Percentage change relative to the closing price 20 trading days earlier | 20 trading days |
+| Annualized volatility | Rolling standard deviation of daily returns multiplied by \(\sqrt{252}\) | 20 trading days |
+| Moving-average distance | Relative difference between the closing price and its 50-day moving average | 50 trading days |
+| Momentum | Percentage change relative to the closing price 5 trading days earlier | 5 trading days |
+
+Initial observations without sufficient historical data for rolling calculations are excluded from model fitting.
+
+All features are derived from historical prices available at the corresponding observation date. No future returns are used as model inputs.
+
+### 3. Preprocessing and clustering
+
+The feature matrix is standardized using scikit-learn's `StandardScaler`. A KMeans model with three clusters is fitted on the training period.
+
+The model groups observations according to similarity in standardized feature space. Cluster IDs are arbitrary and do not inherently represent bull, bear, or sideways markets.
+
+The resulting clusters are interpreted using their observed returns, volatility, momentum-related behavior, and moving-average distance.
+
+### 4. Chronological evaluation
+
+The dataset is split chronologically into training and test periods.
+
+- The scaler is fitted exclusively on training features.
+- KMeans learns its centroids from training observations.
+- Test observations are transformed using the fitted training scaler.
+- Test assignments are produced using the existing centroids without refitting on test data.
+
+This approach helps prevent information leakage and evaluates whether the learned clusters remain useful for organizing observations from a later period.
+
+### 5. Evaluation metrics
+
+The application reports silhouette scores to assess cluster cohesion and separation in standardized feature space.
+
+A random-label baseline is also provided as a limited reference for comparison.
+
+Silhouette scores do not measure predictive accuracy, investment profitability, or the ability to forecast future market movements. A visually distinct cluster is not necessarily an economically meaningful market regime.
+
+## Understanding the Results
+
+The dashboard presents historical price behavior, cluster assignments, cluster profiles, and evaluation metrics.
+
+Some clusters may contain very few observations or no observations in the test period. This can happen when a pattern found in the training period does not recur in the held-out period.
+
+Such cases should be interpreted using the observed data rather than forced into predefined market categories. Cluster assignments may also change when the selected date range, features, or model configuration changes.
+
+## Project Structure
 
 ```text
 market-regime-detector/
@@ -51,115 +158,29 @@ market-regime-detector/
 │   ├── model.py
 │   ├── evaluation.py
 │   └── visualization.py
-└── tests/
-    ├── test_data.py
-    ├── test_features.py
-    ├── test_model.py
-    └── test_evaluation.py
+├── tests/
+│   ├── test_data.py
+│   ├── test_features.py
+│   ├── test_model.py
+│   └── test_evaluation.py
+└── assets/
+    └── Screenshot.jpg
 ```
 
----
+## Limitations
 
-## Installation & Setup (Windows PowerShell)
+- Historical patterns do not guarantee that similar conditions will recur.
+- KMeans assumes clusters can be represented using distances to centroids and is sensitive to feature selection and scaling.
+- The choice of three clusters is a configurable modeling assumption, not proof that markets contain exactly three regimes.
+- Rare market events may form small clusters that are difficult to evaluate using a limited test period.
+- Silhouette scores evaluate geometric cluster separation, not financial usefulness.
+- Historical data retrieval depends on an external provider and may be incomplete or unavailable.
+- Results can change with the selected date range, downloaded data, and model configuration.
 
-1. **Clone or open the repository folder:**
-   ```powershell
-   cd C:\Users\PARAM\Desktop\market-regime-detector
-   ```
+## Future Improvements
 
-2. **Create and activate a Python virtual environment:**
-   ```powershell
-   python -m venv .venv
-   .venv\Scripts\Activate.ps1
-   ```
-
-3. **Install dependencies:**
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
----
-
-## Running Tests & Launching the Dashboard
-
-### 1. Run Automated Tests
-```powershell
-.venv\Scripts\python.exe -m pytest tests/ -v
-```
-
-### 2. Launch Streamlit Dashboard
-```powershell
-.venv\Scripts\streamlit.exe run app.py
-```
-
----
-
-## Feature Definitions & Formulas
-
-All features use **past-only data** at each observation $t$ (no future information):
-
-| Feature | Formula / Implementation | Lookback |
-|---|---|---|
-| Daily Return | $R_t = \frac{P_t - P_{t-1}}{P_{t-1}}$ | 1 day (`pct_change()`) |
-| 20-Day Cumulative Return | $R_{t,20} = \frac{P_t - P_{t-20}}{P_{t-20}}$ | 20 trading days (`pct_change(periods=20)`) |
-| 20-Day Annualized Volatility | $\sigma_{t,20} = \text{std}(R_{t-19:t}) \times \sqrt{252}$ | 20 trading days (`rolling(window=20).std() * sqrt(252)`) |
-| Distance from 50-Day MA | $D_{t,50} = \frac{P_t - \text{MA}_{50,t}}{\text{MA}_{50,t}}$ | 50-day rolling mean (`rolling(window=50).mean()`) |
-| 5-Day Momentum | $M_{t,5} = \frac{P_t - P_{t-5}}{P_{t-5}}$ | 5 trading days (`pct_change(periods=5)`) |
-
----
-
-## Train/Test Methodology & Leakage Prevention
-
-- **Chronological Split**: Data is split chronologically (e.g., first 70% for training, remaining 30% for testing) to prevent time-series data leakage.
-- **Preprocessing Isolation**: `StandardScaler` is fitted **strictly on the training set**. The test set is transformed using training parameters.
-- **KMeans Unsupervised Clustering**: The model learns cluster centroids from training features only and assigns test points to the nearest existing centroid without refitting.
-
----
-
-## Methodological Insights & Audit Findings
-
-### 1. Missing Test Clusters (Zero-Count Display)
-- **Observation**: Training profile displays all $K$ clusters (e.g., 0, 1, 2), while the test profile may show only clusters 0 and 1 (with 0 count for cluster 2).
-- **Explanation**: KMeans test assignment maps observations to fixed training centroids. If out-of-sample periods lack severe crisis events (e.g., March–April 2020 COVID crash), test observations do not map to Cluster 2. **We never refit on test data or force cluster assignments.** Showing zero-count clusters transparently reflects actual out-of-sample regime distributions.
-
-### 2. Rare Extreme Cluster (Cluster 2)
-- **Characteristics**: ~2.2% of training observations (concentrated in March–April 2020), mean 20-day return $\sim -20.4\%$, annualized volatility $\sim 70.5\%$, and distance from 50-day MA $\sim -20.5\%$.
-- **Interpretation**: This captures extreme pandemic-style market dislocating shocks. It is an outlier/stress regime rather than a regular market phase.
-
-### 3. Evaluation & Silhouette Methodology
-
-- **Calculated on:** Scaled feature matrices (`StandardScaler.transform(X)`) using the cluster labels assigned by fitted KMeans.
-- **Training silhouette:** Uses training-period scaled features and training-period cluster assignments.
-- **Test silhouette:** Uses test-period scaled features (transformed with training scaler) and test-period cluster assignments (predicted from fixed centroids).
-- **Baseline:** Random uniform labels over `0..K-1` with fixed `random_state=42`. This provides a reproducible reference only; it is not a definitive benchmark of market predictability.
-- **Limitations:** Silhouette measures cluster cohesion/separation in feature space. It does **not** establish predictive performance, profitability, or future market behavior.
-
----
-
-## Verified Cluster Profile (Reproducible from Live NIFTY 50 Data)
-
-From the training period (~1,680 rows, ~70% split):
-
-| Regime (Cluster) | Count | % | Mean 20-Day Return | Mean Annualized Vol | Mean MA Distance |
-|---|---|---|---|---|---|
-| Cluster 0 | 469 | 41.6% | −1.13% | 15.97% | −0.76% |
-| Cluster 1 | 633 | 56.2% | +4.45% | 13.77% | +4.49% |
-| Cluster 2 (Rare / Extreme) | 25 | 2.2% | −20.40% | 70.54% | −20.51% |
-
-- **Cluster 2 dates:** 2020-03-12 to 2020-04-21 (COVID crash period). It captures outlier stress events, not a regular regime.
-- **Cluster IDs are arbitrary:** 0, 1, 2 are assigned by KMeans initialization; they do not automatically map to bull/bear/sideways.
-- **Test profile:** Cluster 2 count = 0 because the held-out test period (2023–2024) contained no comparable crisis-level dislocation. No refitting was performed on test data.
-
----
-
-## Visualizations
-
-- Use the Streamlit dashboard (`streamlit run app.py`) to generate plots.
-- **Screenshot placeholder:** Capture with your browser or OS screenshot tool; save to `assets/` (e.g., `assets/dashboard_screenshot.png`) and reference here.
-- No fabricated deployment links or screenshots included.
-
----
+Potential extensions include comparing different clustering algorithms, evaluating alternative feature sets, studying regime stability across multiple chronological windows, and improving the interpretability of detected clusters.
 
 ## Disclaimer
 
-This is a research and educational project, **not** financial advice or a trading system.
+This project is intended for educational and research purposes only. It is not financial advice, an investment recommendation system, or a guarantee of future market behavior.
